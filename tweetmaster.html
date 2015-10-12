@@ -3,12 +3,41 @@
 </head>
 
 <body>
-  <h1>Welcome to Meteor!</h1>
-
-  {{> hello}}
+  <h1>Welcome to tweetmaster</h1>
+  <!-- Meteor's built-in login handling. Here temporarily. -->
+  {{> loginButtons}}
+  
+  <!-- Either display the sign-up form, or greet the user -->
+  {{#if currentUser}}
+  	<h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2>
+  	{{> userinfo}}
+  {{else}}
+	  <h2>Sign up form</h2>
+	  {{> signup}}
+  {{/if}}
 </body>
 
-<template name="hello">
-  <button>Click Me</button>
-  <p>You've pressed the button {{counter}} times.</p>
+<!-- Our own sign-up form -->
+<template name="signup">
+	<form id="sign-up" action="action">
+		<input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane">
+		<input type="text" id="sign-up-last-name" name="last-name" placeholder="Doe">
+		<input type="email" id="sign-up-email" name="sign-up-email" placeholder="janedoe@example.com">
+		<input type="password" id="sign-up-password" name="sign-up-password">
+		<input type="submit" id="sign-up-button" value="Sign Up">
+	</form>
+</template>
+
+<!-- Our own logout button -->
+<!-- <template name="logout">
+	<form id="logout" action="action">
+  		<input type="submit" value="Logout">
+  	</form>
+</template> -->
+
+<template name="userinfo">
+	<ul id="userinfo">
+		<li>{{currentUser.profile.firstname}}</li>
+		<li>{{currentUser.profile.lastname}}</li>
+	</ul>
 </template>
