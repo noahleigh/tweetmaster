@@ -28,6 +28,12 @@ if (Meteor.isClient) {
          return false; 
       }
   });
+
+  Template.userinfo.helpers({
+    email: function () {
+      return Meteor.user().emails[0].address;
+    }
+  });
 }
 
 if (Meteor.isServer) {
