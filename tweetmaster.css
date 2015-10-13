@@ -1,1 +1,5 @@
 /* CSS declarations go here */
+
+#sign-up input {
+	display: block;
+}
