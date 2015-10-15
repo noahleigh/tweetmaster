@@ -1,5 +1,10 @@
 /* CSS declarations go here */
 
-#sign-up input {
-	display: block;
+#sign-up input,
+#login input {
+    display: block;
+}
+
+.monospace {
+    font-family: monospace;
 }
