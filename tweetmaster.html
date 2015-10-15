@@ -1,48 +1,64 @@
 <head>
-  <title>tweetmaster</title>
+    <title>tweetmaster</title>
 </head>
 
 <body>
-  <h1>Welcome to tweetmaster</h1>
-  <!-- Meteor's built-in login handling. Here temporarily. -->
-  {{> loginButtons}}
-  
-  <!-- Either display the sign-up form, or greet the user -->
-  {{#if currentUser}}
-  	<h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2>
-  	{{> userinfo}}
-  {{else}}
-	  <h2>Sign up form</h2>
-	  {{> signup}}
-  {{/if}}
+    <h1>Welcome to tweetmaster</h1>
+    <!-- Either display the sign-up form, or greet the user -->
+    {{#if currentUser}}
+    	<h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2> 
+    	{{> userinfo}} 
+
+    	{{> logout}}
+	{{else}}
+		<h2>Login Form</h2>
+		{{> login}}
+    	<h2>Sign up form</h2> 
+    	{{> signup}} 
+	{{/if}}
 </body>
+
+<!-- TEMPLATES -->
+
+<!-- Our own login form -->
+<template name="login">
+    <form id="login" action="">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" name="login-email" placeholder="janedoe@example.com" required>
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" name="login-password" required>
+        <input type="submit" id="login-button" value="Login">
+    </form>
+</template>
 
 <!-- Our own sign-up form -->
 <template name="signup">
-	<form id="sign-up" action="action">
-		<label for="sign-up-first-name">First Name</label>
-		<input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required>
-		<label for="sign-up-last-name">Last Name</label>
-		<input type="text" id="sign-up-last-name" name="last-name" placeholder="Doe" required>
-		<label for="sign-up-email">Email</label>
-		<input type="email" id="sign-up-email" name="sign-up-email" placeholder="janedoe@example.com" required>
-		<label for="sign-up-password">Password</label>
-		<input type="password" id="sign-up-password" name="sign-up-password" required>
-		<input type="submit" id="sign-up-button" value="Sign Up">
-	</form>
+    <form id="sign-up" action="">
+        <label for="sign-up-first-name">First Name</label>
+        <input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required>
+        <label for="sign-up-last-name">Last Name</label>
+        <input type="text" id="sign-up-last-name" name="last-name" placeholder="Doe" required>
+        <label for="sign-up-email">Email</label>
+        <input type="email" id="sign-up-email" name="sign-up-email" placeholder="janedoe@example.com" required>
+        <label for="sign-up-password">Password</label>
+        <input type="password" id="sign-up-password" name="sign-up-password" required>
+        <input type="submit" id="sign-up-button" value="Sign Up">
+    </form>
 </template>
 
 <!-- Our own logout button -->
-<!-- <template name="logout">
-	<form id="logout" action="action">
+<template name="logout">
+	<form id="logout" action="">
   		<input type="submit" value="Logout">
   	</form>
-</template> -->
+</template>
 
+<!-- Displays basic info for the currently logged-in user. -->
 <template name="userinfo">
-	<ul id="userinfo">
-		<li>First Name: {{currentUser.profile.firstname}}</li>
-		<li>Last Name: {{currentUser.profile.lastname}}</li>
-		<li>Email: {{email}}</li>
-	</ul>
+    <ul id="userinfo">
+        <li>Internal ID: <span class="monospace">{{internalId}}</span></li>
+        <li>First Name: <span class="monospace">{{currentUser.profile.firstname}}</span></li>
+        <li>Last Name: <span class="monospace">{{currentUser.profile.lastname}}</span></li>
+        <li>Email: <span class="monospace">{{email}}</span></li>
+    </ul>
 </template>
