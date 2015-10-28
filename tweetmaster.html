@@ -10,6 +10,10 @@
     	{{> userinfo}} 
 
     	{{> logout}}
+
+        {{> tweetentry}}
+
+        {{> tweetfeed}}
 	{{else}}
 		<h2>Login Form</h2>
 		{{> login}}
@@ -22,7 +26,7 @@
 
 <!-- Our own login form -->
 <template name="login">
-    <form id="login" action="">
+    <form id="login" action="post">
         <label for="login-email">Email</label>
         <input type="email" id="login-email" name="login-email" placeholder="janedoe@example.com" required>
         <label for="login-password">Password</label>
@@ -33,7 +37,7 @@
 
 <!-- Our own sign-up form -->
 <template name="signup">
-    <form id="sign-up" action="">
+    <form id="sign-up" action="post">
         <label for="sign-up-first-name">First Name</label>
         <input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required>
         <label for="sign-up-last-name">Last Name</label>
@@ -48,7 +52,7 @@
 
 <!-- Our own logout button -->
 <template name="logout">
-	<form id="logout" action="">
+	<form id="logout" action="post">
   		<input type="submit" value="Logout">
   	</form>
 </template>
@@ -61,4 +65,40 @@
         <li>Last Name: <span class="monospace">{{currentUser.profile.lastname}}</span></li>
         <li>Email: <span class="monospace">{{email}}</span></li>
     </ul>
+</template>
+
+<!-- Tweet Entry Form -->
+<template name="tweetentry">
+    <form id="tweet-entry" action="post">
+        <label for="tweet-entry-text">Compose tweet (max. 140 characters)</label>
+        <textarea name="tweet-entry-text" 
+                  id="tweet-entry-text" 
+                  cols="50" 
+                  rows="3" 
+                  form="tweet-entry" 
+                  maxlength="140" 
+                  minlength="2" 
+                  placeholder="Write your brilliant thoughts here&hellip;"></textarea>
+        <input type="submit" value="Post Tweet">
+    </form>
+</template>
+
+<!-- Tweet Feed-->
+<template name="tweetfeed">
+    <div id="feed-container">
+        <ol id="feed">
+            {{#each tweets}}
+                <li>
+                    <div class="tweet">
+                        <p class="tweet-date">
+                            {{createdAt}}
+                        </p>
+                        <p class="tweet-text">
+                            {{text}}
+                        </p>
+                    </div>
+                </li>
+            {{/each}}
+        </ol>
+    </div>
 </template>

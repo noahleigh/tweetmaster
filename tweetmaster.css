@@ -5,6 +5,38 @@
     display: block;
 }
 
+#logout input{
+    position: fixed;
+    right: 10px;
+    top: 10px;
+}
+
 .monospace {
     font-family: monospace;
+}
+
+textarea#tweet-entry-text {
+	resize: none;
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+#tweet-entry label, 
+#tweet-entry textarea, 
+#tweet-entry input {
+	display: block;
+}
+
+#tweet-entry label {
+	font-size: 18px;
+}
+
+ol#feed {
+	list-style: none;
+}
+
+#feed .tweet-date {
+	font-variant: italic;
+	color: grey;
+	font-size: 10px;
 }
