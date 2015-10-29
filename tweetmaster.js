@@ -4,10 +4,15 @@ Tweets = new Mongo.Collection('tweets');
 if (Meteor.isServer) {
     Meteor.startup(function() {
         // code to run on server at startup
-        // Make the logged-in user's tweets available to the client
+        // Make tweets available to the client
         Meteor.publish("tweets", function() {
-            return Tweets.find({
-                authorID: this.userId
+            return Tweets.find({});
+        });
+        // Make users available to client (may not be necessary)
+        Meteor.publish("users", function() {
+            return Meteor.users.find({}, {
+              _id: 1,
+              profile: 1
             });
         });
     });
@@ -18,6 +23,9 @@ if (Meteor.isClient) {
 
     // Look at the published collection of tweets, update if there are changes
     Meteor.subscribe("tweets");
+
+    // Allow the client to get the user's name from their id (TBD)
+    Meteor.subscribe("users");
 
     // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
     Template.signup.events({
@@ -91,6 +99,12 @@ if (Meteor.isClient) {
         }
     });
 
+    Template.logout.helpers({
+      email: function() {
+            return Meteor.user().emails[0].address;
+        },
+    });
+
     // Handles our userinfo template
     Template.userinfo.helpers({
         email: function() {
@@ -104,51 +118,46 @@ if (Meteor.isClient) {
     //Handles posting tweets
     Template.tweetentry.events({
         'submit #tweet-entry': function(event) {
-            // Don't refresh automatically
+            // Don't refresh automatically on submit
             event.preventDefault();
 
             var text = event.target[0].value;
             var authorID = Meteor.userId();
 
             // Validate and tweak tweet contents...
+            // In this case, don't let them post if there is no content in the tweet.
             if (text == "") {
-                text = "I was too lazy to actually type something in";
+                alert("You must have something to post...");
+                // Refocus the entry box to make it easy to type.
+                document.getElementById("tweet-entry-text").focus();
+            } else{
+              // Debug output
+              console.log("Form submitted");
+              console.log("authorID: " + authorID);
+              console.log("Tweet text: " + text);
+
+              // Insert the tweet and metadata into the database collection
+              Tweets.insert({
+                  authorID: authorID,
+                  createdAt: new Date(),
+                  text: text
+              }, function(err) {
+                  if (err) {
+                      alert("Your tweet did not get saved");
+                  } else {  
+                      console.log("Insert succesful.");
+                      // Empty the Tweet Entry form after submission
+                      document.getElementById("tweet-entry-text").value = "";
+                  };
+              });
             };
-
-            // Debug output
-            console.log("Form submitted");
-            console.log("authorID: " + authorID);
-            console.log("Tweet text: " + text);
-
-            // Insert the tweet and metadata into the database collection
-            Tweets.insert({
-                authorID: authorID,
-                createdAt: new Date(),
-                text: text
-            }, function(err) {
-                if (err) {
-                    alert("Your tweet did not get saved");
-                } else {
-                    console.log("Insert succesful.")
-                };
-            });
-
-            // Empty the Tweet Entry form after submission
-            document.getElementById("tweet-entry-text").value = "";
         }
     });
 
     // Handles getting the tweets from the server to display on the feed.
     Template.tweetfeed.helpers({
         tweets: function() {
-            // Filter by current user, sort newest-first.
-            return Tweets.find({
-                authorID: Meteor.userId()
-              }, {
-                sort: {
-                  createdAt: -1
-                }
-            })
-        }
-    });
+            // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
+            return Tweets.find({authorID: Meteor.userId()}, {sort: {createdAt: -1 }})
+        },});
 }

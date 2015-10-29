@@ -1,24 +1,89 @@
 /* CSS declarations go here */
 
+
+
+@media screen and (min-width: 681px){
+	body {
+		margin-top: 50px;
+	}
+}
+@media screen and (max-width: 680px){
+	body {
+		margin-top: 100px;
+	}
+}
+@media screen and (max-width: 400px){
+	body {
+		margin-top: 150px;
+	}
+}
+
+header {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	border: 1px solid black;
+	background: white;
+}
+header h1 {
+	float: left;
+	margin: 0;
+}
+header #logout {
+	float: right;
+	margin: 2px;
+}
+
+#welcome-forms {
+	width: 500px;
+	margin: auto;
+}
+
+@media screen and (min-width: 550px){
+	#login-container {
+		float: left;
+	}
+	#sign-up-container {
+		float: right;
+	}
+}
+@media screen and (max-width: 549px){
+	#login-container, #sign-up-container {
+		margin-left: 20px;
+	}
+	#login-container {
+		
+	}
+
+	#sign-up-container {
+		
+	}
+}
+
+
 #sign-up input,
 #login input {
     display: block;
-}
-
-#logout input{
-    position: fixed;
-    right: 10px;
-    top: 10px;
 }
 
 .monospace {
     font-family: monospace;
 }
 
+#tweet-compose-feed {
+	max-width: 500px;
+	margin: auto;
+}
+
 textarea#tweet-entry-text {
 	resize: none;
 	font-family: sans-serif;
 	font-size: 16px;
+	width: 100%
+}
+
+#tweet-entry {
+	margin-bottom: 10px;
 }
 
 #tweet-entry label, 
@@ -33,10 +98,27 @@ textarea#tweet-entry-text {
 
 ol#feed {
 	list-style: none;
+	margin: 0;
+	padding: 0;
 }
 
-#feed .tweet-date {
+.tweet {
+	border: 1px solid black;
+	border-radius: 5px;
+	margin-bottom: 5px;
+	padding: 10px;
+}
+
+.tweet-author {
+	margin: 0;
+	font-size: 12;
+}
+.tweet-date {
+	margin: 0;
 	font-variant: italic;
 	color: grey;
 	font-size: 10px;
+}
+.tweet-text	{
+	font-size: 18px;
 }
