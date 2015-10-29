@@ -3,26 +3,41 @@
 </head>
 
 <body>
-    <h1>Welcome to tweetmaster</h1>
+    {{> header}}
     <!-- Either display the sign-up form, or greet the user -->
     {{#if currentUser}}
-    	<h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2> 
-    	{{> userinfo}} 
-
-    	{{> logout}}
+        <div id="tweet-compose-feed">
+            {{> tweetentry}}
+            {{> tweetfeed}} 
+        </div>
 	{{else}}
-		<h2>Login Form</h2>
-		{{> login}}
-    	<h2>Sign up form</h2> 
-    	{{> signup}} 
+		<div id="welcome-forms">
+            <div id="login-container">
+                {{> login}}
+            </div>
+            <div id="sign-up-container">
+                {{> signup}}
+            </div>
+        </div>
 	{{/if}}
 </body>
 
 <!-- TEMPLATES -->
 
+<!-- Header Template -->
+<template name="header">
+    <header>
+        {{#if currentUser}}
+            {{> logout}}
+        {{/if}}
+        <h1>Welcome to tweetmaster</h1>
+    </header>
+</template>
+
 <!-- Our own login form -->
 <template name="login">
-    <form id="login" action="">
+    <h2>Login</h2>
+    <form id="login" action="post">
         <label for="login-email">Email</label>
         <input type="email" id="login-email" name="login-email" placeholder="janedoe@example.com" required>
         <label for="login-password">Password</label>
@@ -33,7 +48,8 @@
 
 <!-- Our own sign-up form -->
 <template name="signup">
-    <form id="sign-up" action="">
+    <h2>Sign Up</h2> 
+    <form id="sign-up" action="post">
         <label for="sign-up-first-name">First Name</label>
         <input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required>
         <label for="sign-up-last-name">Last Name</label>
@@ -48,17 +64,61 @@
 
 <!-- Our own logout button -->
 <template name="logout">
-	<form id="logout" action="">
-  		<input type="submit" value="Logout">
+	<form id="logout" action="post">
+        <label for="logout-button">Logged in as <span class="monospace">{{email}}</span></label>
+  		<input id="logout-button" type="submit" value="Logout">
   	</form>
 </template>
 
 <!-- Displays basic info for the currently logged-in user. -->
 <template name="userinfo">
+    <h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2> 
     <ul id="userinfo">
         <li>Internal ID: <span class="monospace">{{internalId}}</span></li>
         <li>First Name: <span class="monospace">{{currentUser.profile.firstname}}</span></li>
         <li>Last Name: <span class="monospace">{{currentUser.profile.lastname}}</span></li>
         <li>Email: <span class="monospace">{{email}}</span></li>
     </ul>
+</template>
+
+<!-- Tweet Entry Form -->
+<template name="tweetentry">
+    <form id="tweet-entry" action="post">
+        <label for="tweet-entry-text">Compose tweet (max. 140 characters)</label>
+        <textarea name="tweet-entry-text" 
+                  id="tweet-entry-text"  
+                  rows="3" 
+                  form="tweet-entry" 
+                  maxlength="140" 
+                  minlength="2" 
+                  placeholder="Write your brilliant thoughts here&hellip;"></textarea>
+        <input type="submit" value="Post Tweet">
+    </form>
+</template>
+
+<!-- Tweet Feed-->
+<template name="tweetfeed">
+    <div id="feed-container">
+        <ol id="feed">
+            {{#each tweets}}
+                <li>
+                    <div class="tweet">
+                        <div class="tweet-meta">
+                            <p class="tweet-author">
+                                <!-- Needs to use the user's name, but we haven't figure out how to do that. -->
+                                <!-- Might need to rewrite this section. -->
+                                {{authorID}}
+                            </p>
+                            <p class="tweet-date">
+                                {{createdAt}}
+                            </p>
+                        </div>
+                        <p class="tweet-text">
+                            {{text}}
+                        </p>
+                    </div>
+                </li>
+            {{/each}}
+        </ol>
+    </div>
 </template>
