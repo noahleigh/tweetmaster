@@ -1,6 +1,26 @@
 // Define the collection for holding all tweets if it doesn't exist yet.
 Tweets = new Mongo.Collection('tweets');
 
+// ROUTING
+
+// The Main template will be used for all pages, with content inserted in it.
+Router.configure({
+    layoutTemplate: 'main'
+});
+
+// Moved this logic out of the templating engine, which should be much neater with less redraws.
+// If no one is logged in, show the welcome screen. Otherwise show the user their homescreen.
+Router.route('/', {
+    name: 'home',
+    action: function(){
+        if (!Meteor.userId()) {
+            this.render('welcome');
+        } else {
+            this.render('home');
+        }
+    }
+});
+
 if (Meteor.isServer) {
     Meteor.startup(function() {
         // code to run on server at startup
