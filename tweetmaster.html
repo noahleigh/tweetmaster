@@ -120,21 +120,7 @@
         <ol id="feed">
             {{#each tweets}}
                 <li>
-                    <div class="tweet">
-                        <div class="tweet-meta">
-                            <p class="tweet-author">
-                                <!-- Needs to use the user's name, but we haven't figure out how to do that. -->
-                                <!-- Might need to rewrite this section. -->
-                                <a href="/user/{{ authorID }}">{{ firstname }} {{ lastname }}</a>
-                            </p>
-                            <p class="tweet-date">
-                                {{createdAt}}
-                            </p>
-                        </div>
-                        <p class="tweet-text">
-                            {{text}}
-                        </p>
-                    </div>
+                    {{> tweet }}
                 </li>
             {{/each}}
         </ol>
@@ -154,6 +140,23 @@
 <template name="userprofileinfo">
     <div class="userProfileInfo">
         <p>Tweets by {{ firstname }} {{ lastname }}
+        </p>
+    </div>
+</template>
+
+<!-- A Single Tweet -->
+<template name="tweet">
+    <div class="tweet">
+        <div class="tweet-meta">
+            <p class="tweet-author">
+                <a href="/user/{{ authorID }}">{{ firstname }} {{ lastname }}</a>
+            </p>
+            <p class="tweet-date">
+                <a href="/tweet/{{ id }}">{{createdAt}}</a>
+            </p>
+        </div>
+        <p class="tweet-text">
+            {{text}}
         </p>
     </div>
 </template>

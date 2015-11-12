@@ -31,6 +31,25 @@ Router.route('/user/:_id', {
     }
 });
 
+// Visiting /tweet/[tweetid] will show you their tweets.
+Router.route('/tweet/:_id', {
+    name: 'tweet',
+    template: 'tweet',
+    data: function(){
+        var object = {_id: this.params._id}
+        return object;
+    }
+});
+
+// Visiting /alltweets will display all the tweets in the database. For testing.
+Router.route('/alltweets', {
+    name: 'alltweets',
+    template: 'tweetfeed',
+    onAfterAction: function (){
+        console.log("looking at ALL the tweets");
+    }
+});
+
 // END ROUTING
 
 if (Meteor.isServer) {
@@ -137,7 +156,7 @@ if (Meteor.isClient) {
         },
     });
 
-    // Handles our userinfo template
+    // Handles our testing userinfo template
     Template.userinfo.helpers({
         email: function() {
             return Meteor.user().emails[0].address;
@@ -186,7 +205,7 @@ if (Meteor.isClient) {
         }
     });
 
-    // Handles getting the tweets from the server to display on the feed.
+    // Handles making a list of Tweet template's. Changes based on routing context.
     Template.tweetfeed.helpers({
         tweets: function() {
             if (Router.current().route.getName() == 'home') {
@@ -195,35 +214,44 @@ if (Meteor.isClient) {
             } else if (Router.current().route.getName() == 'userpage') {
                 // For when tweetfeed is used in a userpage context
                 return Tweets.find({authorID: Router.current().params._id}, {sort: {createdAt: -1 }})
-            };
-            
-        },
-        firstname: function () {
-            if (Router.current().route.getName() == 'home') {
-                // Get the current user's first name if we're on their home page (doesn't support tweets from multiple people yet).
-                return Meteor.users.findOne({_id: Meteor.userId()}).profile.firstname;
-            } else if (Router.current().route.getName() == 'userpage') {
-                // Get the first name of the user from the routing parameter.
-                return Meteor.users.findOne({_id: Router.current().params._id}).profile.firstname;
-            };
-        },
-        lastname: function () {
-            if (Router.current().route.getName() == 'home') {
-                // Get the current user's last name if we're on their home page (doesn't support tweets from multiple people yet).
-                return Meteor.users.findOne({_id: Meteor.userId()}).profile.lastname;
-            } else if (Router.current().route.getName() == 'userpage') {
-                // Get the last name of the user from the routing parameter.
-                return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
-            };
+            } else if (Router.current().route.getName() == 'alltweets') {
+                console.log("Tweetfeed Template hit 'alltweets'");
+                // For when we want to see ALL the tweets
+                return Tweets.find({}, {sort: {createdAt: -1 }});
+            };    
         }
     });
 
+    // Profile information on user pages. Will probably be expanded.
     Template.userprofileinfo.helpers({
         firstname: function () {
             return Meteor.users.findOne({_id: Router.current().params._id}).profile.firstname;
         },
         lastname: function () {
             return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
+        }
+    });
+
+    // Gets all the data for a single tweet. Requires a data context with an object with an _id field for the specific tweet id.
+    Template.tweet.helpers({
+        firstname: function () {
+            //console.log("tweetid: "+this._id);
+            var authorID = Tweets.findOne({_id: this._id}).authorID;
+            return Meteor.users.findOne({_id: authorID}).profile.firstname;
+        },
+        lastname: function () {
+            var authorID = Tweets.findOne({_id: this._id}).authorID;
+            return Meteor.users.findOne({_id: authorID}).profile.lastname;
+        },
+        id: function () {
+            //console.log(this);
+            return this._id;
+        },
+        createdAt: function () {
+            return Tweets.findOne({_id: this._id}).createdAt;
+        },
+        text: function () {
+            return Tweets.findOne({_id: this._id}).text;
         }
     });
 }
