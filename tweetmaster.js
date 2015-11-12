@@ -12,14 +12,26 @@ Router.configure({
 // If no one is logged in, show the welcome screen. Otherwise show the user their homescreen.
 Router.route('/', {
     name: 'home',
-    action: function(){
-        if (!Meteor.userId()) {
-            this.render('welcome');
+    template: 'home',
+    onBeforeAction: function(){
+        if (Meteor.userId()) {
+            this.next();
         } else {
-            this.render('home');
+            this.render('welcome');
         }
     }
 });
+
+// Visiting /user/[userid] will show you their tweets.
+Router.route('/user/:_id', {
+    name: 'userpage',
+    template: 'userpage',
+    data: function(){
+        return Tweets.find({authorID: this.params._id}, {sort: {createdAt: -1}});
+    }
+});
+
+// END ROUTING
 
 if (Meteor.isServer) {
     Meteor.startup(function() {
@@ -112,7 +124,7 @@ if (Meteor.isClient) {
                     alert("You have not been logged out.");
                 } else {
                     // Tell the user we logged them out
-                    alert("You have been logged out.");
+                    // alert("You have been logged out.");
                 }
             });
             return false;
@@ -177,7 +189,41 @@ if (Meteor.isClient) {
     // Handles getting the tweets from the server to display on the feed.
     Template.tweetfeed.helpers({
         tweets: function() {
-            // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
-            return Tweets.find({authorID: Meteor.userId()}, {sort: {createdAt: -1 }})
-        },});
+            if (Router.current().route.getName() == 'home') {
+                // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
+                return Tweets.find({authorID: Meteor.userId()}, {sort: {createdAt: -1 }})
+            } else if (Router.current().route.getName() == 'userpage') {
+                // For when tweetfeed is used in a userpage context
+                return Tweets.find({authorID: Router.current().params._id}, {sort: {createdAt: -1 }})
+            };
+            
+        },
+        firstname: function () {
+            if (Router.current().route.getName() == 'home') {
+                // Get the current user's first name if we're on their home page (doesn't support tweets from multiple people yet).
+                return Meteor.users.findOne({_id: Meteor.userId()}).profile.firstname;
+            } else if (Router.current().route.getName() == 'userpage') {
+                // Get the first name of the user from the routing parameter.
+                return Meteor.users.findOne({_id: Router.current().params._id}).profile.firstname;
+            };
+        },
+        lastname: function () {
+            if (Router.current().route.getName() == 'home') {
+                // Get the current user's last name if we're on their home page (doesn't support tweets from multiple people yet).
+                return Meteor.users.findOne({_id: Meteor.userId()}).profile.lastname;
+            } else if (Router.current().route.getName() == 'userpage') {
+                // Get the last name of the user from the routing parameter.
+                return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
+            };
+        }
+    });
+
+    Template.userprofileinfo.helpers({
+        firstname: function () {
+            return Meteor.users.findOne({_id: Router.current().params._id}).profile.firstname;
+        },
+        lastname: function () {
+            return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
+        }
+    });
 }

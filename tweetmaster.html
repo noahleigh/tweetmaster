@@ -21,7 +21,7 @@
         {{#if currentUser}}
             {{> logout}}
         {{/if}}
-        <h1>Welcome to tweetmaster</h1>
+        <h1>Welcome to <a href="/">tweetmaster</a></h1>
     </header>
 </template>
 
@@ -114,7 +114,7 @@
     </form>
 </template>
 
-<!-- Tweet Feed-->
+<!-- A Tweet Feed-->
 <template name="tweetfeed">
     <div id="feed-container">
         <ol id="feed">
@@ -125,7 +125,7 @@
                             <p class="tweet-author">
                                 <!-- Needs to use the user's name, but we haven't figure out how to do that. -->
                                 <!-- Might need to rewrite this section. -->
-                                {{authorID}}
+                                <a href="/user/{{ authorID }}">{{ firstname }} {{ lastname }}</a>
                             </p>
                             <p class="tweet-date">
                                 {{createdAt}}
@@ -138,5 +138,22 @@
                 </li>
             {{/each}}
         </ol>
+    </div>
+</template>
+
+<!-- Other User Pages -->
+<template name="userpage">
+    <div id="user-page-container">
+        {{> userprofileinfo}}
+        {{> tweetfeed}}
+    </div>
+    
+</template>
+
+<!-- User Profile Info -->
+<template name="userprofileinfo">
+    <div class="userProfileInfo">
+        <p>Tweets by {{ firstname }} {{ lastname }}
+        </p>
     </div>
 </template>
