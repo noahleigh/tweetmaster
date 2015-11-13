@@ -18,10 +18,11 @@
 <!-- Header Template -->
 <template name="header">
     <header>
+        <h1>Welcome to <a href="/">tweetmaster</a></h1>
         {{#if currentUser}}
+            {{> userlist}} 
             {{> logout}}
         {{/if}}
-        <h1>Welcome to <a href="/">tweetmaster</a></h1>
     </header>
 </template>
 
@@ -78,6 +79,20 @@
         <label for="logout-button">Logged in as <span class="monospace">{{email}}</span></label>
   		<input id="logout-button" type="submit" value="Logout">
   	</form>
+</template>
+
+<!-- List of users in the header -->
+<template name="userlist">
+    <form action="" id="user-list">
+        <label for="users-select">Users</label>
+        <select name="user" id="users-select">
+            <option value=""></option>
+            {{#each users}}
+                <option value={{ _id }}>{{ profile.firstname }} {{ profile.lastname }}</option>
+            {{/each}}
+        </select>
+        <input type="submit" value="Visit User Page">
+    </form>
 </template>
 
 <!-- Displays basic info for the currently logged-in user. -->
@@ -179,7 +194,7 @@
     <ul id="friend-list">
         {{#each currentUser.friendsAsUsers}}
             <!-- User instances this time instead of Friend instances -->
-            <li><a href="/user/{{_id}}">{{firstname}} {{lastname}}</a></li>
+            <li><a href="/user/{{_id}}">{{profile.firstname}} {{profile.lastname}}</a></li>
         {{/each}}
     </ul>
 </template>

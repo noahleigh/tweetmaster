@@ -286,6 +286,22 @@ if (Meteor.isClient) {
         }
     });
 
+    // Get a list of all users to display in the dropdown menu.
+    Template.userlist.helpers({
+        users: function () {
+            return Meteor.users.find({});
+        }
+    });
+
+    // Navigate to the user's page when the user clicks the Visit User Page.
+    Template.userlist.events({
+        'submit #user-list': function (event) {
+            // console.log("user-list submitted");
+            event.preventDefault();
+            Router.go('/user/'+event.target[0].value);
+        }
+    });
+
     //Handles posting tweets
     Template.tweetentry.events({
         'submit #tweet-entry': function(event) {
@@ -483,16 +499,9 @@ if (Meteor.isClient) {
         }
     });
 
-    Template.friendlist.helpers({
-        firstname: function () {
-            return Meteor.users.findOne({_id: this._id}).profile.firstname;
-        },
-        lastname: function () {
-            return Meteor.users.findOne({_id: this._id}).profile.lastname;
-        }
-    });
-
+    // Gets the actual names of the users requesting friendship
     Template.friendrequestlist.helpers({
+        // Sets the current data context
         currentUser: function () {
             return Meteor.user();
         },
@@ -504,6 +513,7 @@ if (Meteor.isClient) {
         }
     });
 
+    // Handles accepting or denying friendship requests
     Template.friendrequestlist.events({
         'click [data-action=accept]': function() {
             Meteor.users.findOne({_id: this.requesterId}).acceptFriendshipRequest();
