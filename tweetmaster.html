@@ -93,6 +93,11 @@
 
 <!-- Home page for logged-in user Template -->
 <template name="home">
+    <div id="friends-section">
+        {{> friendlist}}
+        {{> friendrequestlist}}
+    </div>
+    
     <div id="tweet-compose-feed">
         {{> tweetentry}}
         {{> tweetfeed}} 
@@ -139,11 +144,15 @@
 <!-- User Profile Info -->
 <template name="userprofileinfo">
     <div class="userProfileInfo">
-        <p>Tweets by {{ firstname }} {{ lastname }}</p>
-        <form action="" id="relationship">
-            <input type="hidden" name="isfriend" value={{ isfriend }} >
-            <input type="submit" value={{ addfriend }} name="friend-button" id="friend-button" >
-        </form>
+        <h2>Tweets by {{ firstname }} {{ lastname }}</h2>
+        {{ #if currentUser }}
+            {{ #if notCurrentUser }}
+                <form action="" id="relationship">
+                    <input type="hidden" name="isfriend" value={{ isfriend }} >
+                    <input type="submit" value={{ addfriend }} name="friend-button" id="friend-button" >
+                </form>
+            {{ /if }}
+        {{ /if }}
     </div>
 </template>
 
@@ -162,4 +171,32 @@
             {{text}}
         </p>
     </div>
+</template>
+
+<!-- List of current user's friends, based on: https://github.com/copleykj/socialize-friendships/#instance-methods-2 -->
+<template name="friendlist">
+    <h3>Friends</h3>
+    <ul id="friend-list">
+        {{#each currentUser.friendsAsUsers}}
+            <!-- User instances this time instead of Friend instances -->
+            <li><a href="/user/{{_id}}">{{firstname}} {{lastname}}</a></li>
+        {{/each}}
+    </ul>
+</template>
+
+<!-- List of current user's friend requests from other users, based on: https://github.com/copleykj/socialize-friendships/#instance-methods-2 -->
+<template name="friendrequestlist">
+    <h3>Friend Requests</h3>
+    <ul id="friend-request-list">
+        {{#each currentUser.requests}}
+        <li class="request">
+            <p><a href="/user/{{requesterId}}">{{firstname}} {{lastname}}</a></p>
+            <p>
+                <a href="#" data-action="accept">Accept</a>
+                <a href="#" data-action="deny">Deny</a>
+                <!-- <a href="#" data-action="ignore">Ignore</a> -->
+            </p>
+        </li>
+        {{/each}}
+    </ul>
 </template>

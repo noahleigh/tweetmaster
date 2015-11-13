@@ -75,9 +75,13 @@ text-align: center;
     font-family: monospace;
 }
 
+#friends-section {
+	float: right;
+}
+
 #tweet-compose-feed, #user-page-container {
 	max-width: 500px;
-	margin: auto;
+	margin-left: 10px;
 }
 
 textarea#tweet-entry-text {

@@ -73,6 +73,105 @@ if (Meteor.isServer) {
             return true;
           }
         });
+
+        // From the socialize:friendships package (https://github.com/copleykj/socialize-friendships/wiki/Publications)
+        //Publish friend records with their related user records
+        Meteor.publish("friends", function (options) {
+            if(!this.userId){
+                return this.ready();
+            }
+
+            options = options || {};
+
+            //only allow the limit and skip options
+            options = _.pick(options, "limit", "skip", "sort");
+
+
+
+            Meteor.publishWithRelations({
+                handle: this,
+                collection: Meteor.friends,
+                filter: {userId:this.userId, friendId:{$ne:this.userId}},
+                options:options,
+                mappings: [{
+                    key: 'friendId',
+                    collection: Meteor.users,
+                    options:{fields:{username:true, avatarId:true, status:true}}
+                }]
+            });
+        });
+
+        Meteor.publish('friendRequests', function(options){
+            if(!this.userId){
+                return this.ready();
+            }
+
+            options = options || {};
+
+            //only allow the limit and skip options
+            options = _.pick(options, "limit", "skip", "sort");
+
+            Meteor.publishWithRelations({
+                handle: this,
+                collection: Meteor.requests,
+                filter: {userId:this.userId, denied:{$exists:false}, ignored:{$exists:false}},
+                options:options,
+                mappings: [{
+                    key: 'requesterId',
+                    collection: Meteor.users,
+                    options:{fields:{username:true, avatarId:true}}
+                }]
+            });
+
+        });
+
+        Meteor.publish('ignoredFriendRequests', function(options){
+            if(!this.userId){
+                return this.ready();
+            }
+
+            options = options || {};
+
+            //only allow the limit and skip options
+            options = _.pick(options, "limit", "skip", "sort");
+
+            Meteor.publishWithRelations({
+                handle: this,
+                collection: Meteor.requests,
+                filter: {userId:this.userId, denied:{$exists:false}, ignored:{$exists:true}},
+                options:options,
+                mappings: [{
+                    key: 'requesterId',
+                    collection: Meteor.users,
+                    options:{fields:{username:true, avatarId:true}}
+                }]
+            });
+
+        });
+
+        Meteor.publish('outgoingFriendRequests', function(options){
+            if(!this.userId){
+                return this.ready();
+            }
+
+            options = options || {};
+
+            //only allow the limit and skip options
+            options = _.pick(options, "limit", "skip", "sort");
+
+            Meteor.publishWithRelations({
+                handle: this,
+                collection: Meteor.requests,
+                filter: {requesterId:this.userId, denied:{$exists:false}},
+                options:options,
+                mappings: [{
+                    key: 'requesterId',
+                    collection: Meteor.users,
+                    options:{fields:{username:true, avatarId:true}}
+                }]
+            });
+
+        });
     });
 }
 
@@ -84,6 +183,11 @@ if (Meteor.isClient) {
 
     // Allow the client to get the user's name from their id (TBD)
     Meteor.subscribe("users");
+
+    Meteor.subscribe("friends");
+    Meteor.subscribe("friendRequests");
+    Meteor.subscribe("ignoredFriendRequests");
+    Meteor.subscribe("outgoingFriendRequests");
 
     // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
     Template.signup.events({
@@ -226,7 +330,12 @@ if (Meteor.isClient) {
         tweets: function() {
             if (Router.current().route.getName() == 'home') {
                 // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
-                return Tweets.find({authorID: Meteor.userId()}, {sort: {createdAt: -1 }})
+                var friendArray = Meteor.user().friendsAsUsers().fetch();
+                for (var i = friendArray.length - 1; i >= 0; i--) {
+                    friendArray[i] = friendArray[i]._id;
+                };
+                friendArray.push(Meteor.userId());
+                return Tweets.find({authorID: {$in: friendArray} }, {sort: {createdAt: -1 }})
             } else if (Router.current().route.getName() == 'userpage') {
                 // For when tweetfeed is used in a userpage context
                 return Tweets.find({authorID: Router.current().params._id}, {sort: {createdAt: -1 }})
@@ -246,24 +355,86 @@ if (Meteor.isClient) {
         lastname: function () {
             return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
         },
+        // Don't show the Friend Request button on the user's own page when logged in.
+        notCurrentUser: function(){
+            return Router.current().params._id !== Meteor.userId();
+        },
+        // Handles what the Friend Request button displays
         addfriend: function () {
-                // Does the current user have this other user in their friends list?
-            if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1 && 
-                // Does this other user have the current user in their friends list?
-                Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
-                return "Remove friend";
-            } else {
-                return "Add as friend";
+            var friendList = Meteor.user().friendsAsUsers().fetch();
+            var requestList = Meteor.user().pendingRequests().fetch();
+
+            // Takes an array of Friends, an ID too look for
+            function isFriend(array, id){
+                for (var i = array.length - 1; i >= 0; i--) {
+                    if (array[i]._id == id) {
+                        console.log("We found "+ id);
+                        return true;
+                    };
+                };
+                return false;
             };
+
+            // Takes an array of Friend Requests, a userID too look for
+            function hasRequested(array, id){
+                for (var i = array.length - 1; i >= 0; i--) {
+                    if (array[i].userId == id) {
+                        console.log("We found "+ id);
+                        return true;
+                    };
+                };
+                return false;
+            };
+            
+            if (isFriend(friendList, Router.current().params._id)) {
+                // Does the current user have this other user in their friends list?
+                return "Unfriend";
+            } else {
+                if (hasRequested(requestList, Router.current().params._id)) {
+                    // Has the current user already requested friendship with this user?
+                    return "Cancel Friend Request"
+                } else {
+                    return "Add as Friend";
+                };
+            };
+
         },
         isfriend: function () {
-                 // Does the current user have this other user in their friends list?
-            if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1 && 
-                // Does this other user have the current user in their friends list?
-                Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
+            var friendList = Meteor.user().friendsAsUsers().fetch();
+            var requestList = Meteor.user().pendingRequests().fetch();
+
+            // Takes an array of Friends, an ID too look for
+            function isFriend(array, id){
+                for (var i = array.length - 1; i >= 0; i--) {
+                    if (array[i]._id == id) {
+                        console.log("We found "+ id);
+                        return true;
+                    };
+                };
+                return false;
+            };
+
+            // Takes an array of Friend Requests, a userID too look for
+            function hasRequested(array, id){
+                for (var i = array.length - 1; i >= 0; i--) {
+                    if (array[i].userId == id) {
+                        console.log("We found "+ id);
+                        return true;
+                    };
+                };
+                return false;
+            };
+            
+            if (isFriend(friendList, Router.current().params._id)) {
+                // Does the current user have this other user in their friends list?
                 return "true";
             } else {
-                return "false";
+                if (hasRequested(requestList, Router.current().params._id)) {
+                    // Has the current user already requested friendship with this user?
+                    return "pending"
+                } else {
+                    return "false";
+                };
             };
         }
     });
@@ -273,28 +444,18 @@ if (Meteor.isClient) {
             event.preventDefault();
             console.log(event);
 
-            if (event.target[1].value == "true") {
+            if (event.target[0].value == "true") {
                 // Remove friend relationship
                 console.log("Remove");
-            } else {
+                Meteor.users.findOne({_id: Router.current().params._id}).unfriend();
+            } else if (event.target[0].value == "false"){
                 // Add friend relationship
-                console.log("Create");
-
-                // If it's already there from a bad update, don't add it again.
-                if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1) {
-                    // Meteor.users.update(
-                    //     { _id: Meteor.userId() },
-                    //     { $push: {"profile.friends": Router.current().params._id} } 
-                    // );
-                };
-                
-                // If it's already there from a bad update, don't add it again.
-                if (Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
-                    // Meteor.users.update(
-                    //     { _id: Router.current().params._id},
-                    //     { $push: {"profile.friends": Meteor.userId()} } 
-                    // );
-                };
+                console.log("Add as friend");
+                Meteor.users.findOne({_id: Router.current().params._id}).requestFriendship();
+            } else if (event.target[0].value == "pending"){
+                // Cancel Friend Request
+                console.log("Cancel Friend Request");
+                Meteor.users.findOne({_id: Router.current().params._id}).cancelFriendshipRequest();
             };
         }
     });
@@ -320,5 +481,35 @@ if (Meteor.isClient) {
         text: function () {
             return Tweets.findOne({_id: this._id}).text;
         }
+    });
+
+    Template.friendlist.helpers({
+        firstname: function () {
+            return Meteor.users.findOne({_id: this._id}).profile.firstname;
+        },
+        lastname: function () {
+            return Meteor.users.findOne({_id: this._id}).profile.lastname;
+        }
+    });
+
+    Template.friendrequestlist.helpers({
+        currentUser: function () {
+            return Meteor.user();
+        },
+        firstname: function () {
+            return Meteor.users.findOne({_id: this.requesterId}).profile.firstname;
+        },
+        lastname: function () {
+            return Meteor.users.findOne({_id: this.requesterId}).profile.lastname;
+        }
+    });
+
+    Template.friendrequestlist.events({
+        'click [data-action=accept]': function() {
+            Meteor.users.findOne({_id: this.requesterId}).acceptFriendshipRequest();
+        },
+        'click [data-action=deny]': function() {
+            Meteor.users.findOne({_id: this.requesterId}).denyFriendshipRequest();
+        },
     });
 }
