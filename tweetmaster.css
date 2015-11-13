@@ -4,12 +4,15 @@
 
 @media screen and (min-width: 681px){
 	body {
-		margin-top: 50px;
+		margin-top: 100px;
 	}
 }
 @media screen and (max-width: 680px){
 	body {
 		margin-top: 100px;
+	}
+	#tweet-entry {
+		clear: both;
 	}
 }
 @media screen and (max-width: 400px){
@@ -34,9 +37,19 @@ header #logout {
 	margin: 2px;
 }
 
+header #user-list {
+	float: left;
+	clear: left;
+}
+
+footer#footer{
+text-align: center;
+}
+
 #welcome-forms {
 	width: 500px;
 	margin: auto;
+	overflow: hidden;
 }
 
 @media screen and (min-width: 550px){
@@ -70,9 +83,13 @@ header #logout {
     font-family: monospace;
 }
 
-#tweet-compose-feed {
+#friends-section {
+	float: right;
+}
+
+#tweet-compose-feed, #user-page-container {
 	max-width: 500px;
-	margin: auto;
+	margin-left: 10px;
 }
 
 textarea#tweet-entry-text {

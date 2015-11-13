@@ -3,35 +3,46 @@
 </head>
 
 <body>
-    {{> header}}
-    <!-- Either display the sign-up form, or greet the user -->
-    {{#if currentUser}}
-        <div id="tweet-compose-feed">
-            {{> tweetentry}}
-            {{> tweetfeed}} 
-        </div>
-	{{else}}
-		<div id="welcome-forms">
-            <div id="login-container">
-                {{> login}}
-            </div>
-            <div id="sign-up-container">
-                {{> signup}}
-            </div>
-        </div>
-	{{/if}}
+
 </body>
 
 <!-- TEMPLATES -->
 
+<!-- Main Template for every page -->
+<template name="main">
+    {{> header}}
+    {{> yield}}
+    {{> footer}}
+</template>
+
 <!-- Header Template -->
 <template name="header">
     <header>
+        <h1>Welcome to <a href="/">tweetmaster</a></h1>
         {{#if currentUser}}
+            {{> userlist}} 
             {{> logout}}
         {{/if}}
-        <h1>Welcome to tweetmaster</h1>
     </header>
+</template>
+
+<!-- Footer Template -->
+<template name="footer">
+    <footer id="footer">
+        <p>Made by Noah L., Jonathan C., Scot L., and Eric P.</p>
+    </footer>
+</template>
+
+<!-- The login and sign-up forms Template -->
+<template name="welcome">
+    <div id="welcome-forms">
+        <div id="login-container">
+            {{> login}}
+        </div>
+        <div id="sign-up-container">
+            {{> signup}}
+        </div>
+    </div>
 </template>
 
 <!-- Our own login form -->
@@ -70,6 +81,20 @@
   	</form>
 </template>
 
+<!-- List of users in the header -->
+<template name="userlist">
+    <form action="" id="user-list">
+        <label for="users-select">Users</label>
+        <select name="user" id="users-select">
+            <option value=""></option>
+            {{#each users}}
+                <option value={{ _id }}>{{ profile.firstname }} {{ profile.lastname }}</option>
+            {{/each}}
+        </select>
+        <input type="submit" value="Visit User Page">
+    </form>
+</template>
+
 <!-- Displays basic info for the currently logged-in user. -->
 <template name="userinfo">
     <h2>Hello {{currentUser.profile.firstname}}, you're logged in!</h2> 
@@ -79,6 +104,19 @@
         <li>Last Name: <span class="monospace">{{currentUser.profile.lastname}}</span></li>
         <li>Email: <span class="monospace">{{email}}</span></li>
     </ul>
+</template>
+
+<!-- Home page for logged-in user Template -->
+<template name="home">
+    <div id="friends-section">
+        {{> friendlist}}
+        {{> friendrequestlist}}
+    </div>
+    
+    <div id="tweet-compose-feed">
+        {{> tweetentry}}
+        {{> tweetfeed}} 
+    </div>
 </template>
 
 <!-- Tweet Entry Form -->
@@ -96,29 +134,84 @@
     </form>
 </template>
 
-<!-- Tweet Feed-->
+<!-- A Tweet Feed-->
 <template name="tweetfeed">
     <div id="feed-container">
         <ol id="feed">
             {{#each tweets}}
                 <li>
-                    <div class="tweet">
-                        <div class="tweet-meta">
-                            <p class="tweet-author">
-                                <!-- Needs to use the user's name, but we haven't figure out how to do that. -->
-                                <!-- Might need to rewrite this section. -->
-                                {{authorID}}
-                            </p>
-                            <p class="tweet-date">
-                                {{createdAt}}
-                            </p>
-                        </div>
-                        <p class="tweet-text">
-                            {{text}}
-                        </p>
-                    </div>
+                    {{> tweet }}
                 </li>
             {{/each}}
         </ol>
     </div>
+</template>
+
+<!-- Other User Pages -->
+<template name="userpage">
+    <div id="user-page-container">
+        {{> userprofileinfo}}
+        {{> tweetfeed}}
+    </div>
+    
+</template>
+
+<!-- User Profile Info -->
+<template name="userprofileinfo">
+    <div class="userProfileInfo">
+        <h2>Tweets by {{ firstname }} {{ lastname }}</h2>
+        {{ #if currentUser }}
+            {{ #if notCurrentUser }}
+                <form action="" id="relationship">
+                    <input type="hidden" name="isfriend" value={{ isfriend }} >
+                    <input type="submit" value={{ addfriend }} name="friend-button" id="friend-button" >
+                </form>
+            {{ /if }}
+        {{ /if }}
+    </div>
+</template>
+
+<!-- A Single Tweet -->
+<template name="tweet">
+    <div class="tweet">
+        <div class="tweet-meta">
+            <p class="tweet-author">
+                <a href="/user/{{ authorID }}">{{ firstname }} {{ lastname }}</a>
+            </p>
+            <p class="tweet-date">
+                <a href="/tweet/{{ id }}">{{createdAt}}</a>
+            </p>
+        </div>
+        <p class="tweet-text">
+            {{text}}
+        </p>
+    </div>
+</template>
+
+<!-- List of current user's friends, based on: https://github.com/copleykj/socialize-friendships/#instance-methods-2 -->
+<template name="friendlist">
+    <h3>Friends</h3>
+    <ul id="friend-list">
+        {{#each currentUser.friendsAsUsers}}
+            <!-- User instances this time instead of Friend instances -->
+            <li><a href="/user/{{_id}}">{{profile.firstname}} {{profile.lastname}}</a></li>
+        {{/each}}
+    </ul>
+</template>
+
+<!-- List of current user's friend requests from other users, based on: https://github.com/copleykj/socialize-friendships/#instance-methods-2 -->
+<template name="friendrequestlist">
+    <h3>Friend Requests</h3>
+    <ul id="friend-request-list">
+        {{#each currentUser.requests}}
+        <li class="request">
+            <p><a href="/user/{{requesterId}}">{{firstname}} {{lastname}}</a></p>
+            <p>
+                <a href="#" data-action="accept">Accept</a>
+                <a href="#" data-action="deny">Deny</a>
+                <!-- <a href="#" data-action="ignore">Ignore</a> -->
+            </p>
+        </li>
+        {{/each}}
+    </ul>
 </template>
