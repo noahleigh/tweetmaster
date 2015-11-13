@@ -139,8 +139,11 @@
 <!-- User Profile Info -->
 <template name="userprofileinfo">
     <div class="userProfileInfo">
-        <p>Tweets by {{ firstname }} {{ lastname }}
-        </p>
+        <p>Tweets by {{ firstname }} {{ lastname }}</p>
+        <form action="" id="relationship">
+            <input type="hidden" name="isfriend" value={{ isfriend }} >
+            <input type="submit" value={{ addfriend }} name="friend-button" id="friend-button" >
+        </form>
     </div>
 </template>
 

@@ -66,6 +66,13 @@ if (Meteor.isServer) {
               profile: 1
             });
         });
+
+        // http://joshowens.me/the-curious-case-of-the-unknowing-leaky-meteor-security/
+        Meteor.users.deny({  
+          update: function() {
+            return true;
+          }
+        });
     });
 }
 
@@ -95,7 +102,10 @@ if (Meteor.isClient) {
                 password: password,
                 profile: {
                     firstname: firstname,
-                    lastname: lastname
+                    lastname: lastname,
+                    friends: [
+
+                    ]
                 }
             }, function(err) {
                 if (err) {
@@ -103,6 +113,10 @@ if (Meteor.isClient) {
                 } else {
                     // The user account has created and logged in.
                     alert("Account created succesfully!");
+                    // Clear Form
+                    for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
+                        document.querySelectorAll("#sign-up input")[i].value = "";
+                    };
                 }
             });
             return false;
@@ -128,6 +142,7 @@ if (Meteor.isClient) {
                     document.getElementById("login-password").value = "";
                 } else {
                     // The user has been logged in.
+                    console.log("User "+Meteor.userId()+ "logged in.");
                 }
             });
             return false;
@@ -137,13 +152,14 @@ if (Meteor.isClient) {
     // Handles our logout
     Template.logout.events({
         'submit #logout': function() {
+            var userid = Meteor.userId();
             Meteor.logout(function(err) {
                 if (err) {
                     // Couldn't logout
                     alert("You have not been logged out.");
                 } else {
                     // Tell the user we logged them out
-                    // alert("You have been logged out.");
+                    console.log("User "+userid+" has been logged out.");
                 }
             });
             return false;
@@ -229,6 +245,57 @@ if (Meteor.isClient) {
         },
         lastname: function () {
             return Meteor.users.findOne({_id: Router.current().params._id}).profile.lastname;
+        },
+        addfriend: function () {
+                // Does the current user have this other user in their friends list?
+            if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1 && 
+                // Does this other user have the current user in their friends list?
+                Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
+                return "Remove friend";
+            } else {
+                return "Add as friend";
+            };
+        },
+        isfriend: function () {
+                 // Does the current user have this other user in their friends list?
+            if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1 && 
+                // Does this other user have the current user in their friends list?
+                Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
+                return "true";
+            } else {
+                return "false";
+            };
+        }
+    });
+
+    Template.userprofileinfo.events({
+        'submit #relationship': function (event) {
+            event.preventDefault();
+            console.log(event);
+
+            if (event.target[1].value == "true") {
+                // Remove friend relationship
+                console.log("Remove");
+            } else {
+                // Add friend relationship
+                console.log("Create");
+
+                // If it's already there from a bad update, don't add it again.
+                if (Meteor.user().profile.friends.indexOf(Router.current().params._id) !== -1) {
+                    // Meteor.users.update(
+                    //     { _id: Meteor.userId() },
+                    //     { $push: {"profile.friends": Router.current().params._id} } 
+                    // );
+                };
+                
+                // If it's already there from a bad update, don't add it again.
+                if (Meteor.users.findOne({_id: Router.current().params._id}).profile.friends.indexOf(Meteor.userId()) !== -1) {
+                    // Meteor.users.update(
+                    //     { _id: Router.current().params._id},
+                    //     { $push: {"profile.friends": Meteor.userId()} } 
+                    // );
+                };
+            };
         }
     });
 
