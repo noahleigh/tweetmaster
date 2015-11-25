@@ -28,6 +28,13 @@ Router.route('/user/:_id', {
     template: 'userpage',
     data: function(){
         return Tweets.find({authorID: this.params._id}, {sort: {createdAt: -1}});
+    },
+    onBeforeAction: function(){
+        if (Meteor.userId()) {
+            this.next();
+        } else {
+            this.render('welcome');
+        }
     }
 });
 
@@ -38,17 +45,31 @@ Router.route('/tweet/:_id', {
     data: function(){
         var object = {_id: this.params._id}
         return object;
+    },
+    onBeforeAction: function(){
+        if (Meteor.userId()) {
+            this.next();
+        } else {
+            this.render('welcome');
+        }
     }
 });
 
 // Visiting /alltweets will display all the tweets in the database. For testing.
-Router.route('/alltweets', {
-    name: 'alltweets',
-    template: 'tweetfeed',
-    onAfterAction: function (){
-        console.log("looking at ALL the tweets");
-    }
-});
+// Router.route('/alltweets', {
+//     name: 'alltweets',
+//     template: 'tweetfeed',
+//     onAfterAction: function (){
+//         console.log("looking at ALL the tweets");
+//     },
+//     onBeforeAction: function(){
+//         if (Meteor.userId()) {
+//             this.next();
+//         } else {
+//             this.render('welcome');
+//         }
+//     }
+// });
 
 // END ROUTING
 
