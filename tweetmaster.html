@@ -62,13 +62,14 @@
     <h2>Sign Up</h2> 
     <form id="sign-up" action="post">
         <label for="sign-up-first-name">First Name</label>
-        <input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required>
+        <input type="text" id="sign-up-first-name" name="first-name" placeholder="Jane" required pattern="^[a-zA-z0-9 -]+$">
         <label for="sign-up-last-name">Last Name</label>
-        <input type="text" id="sign-up-last-name" name="last-name" placeholder="Doe" required>
+        <input type="text" id="sign-up-last-name" name="last-name" placeholder="Doe" required pattern="^[a-zA-z0-9 -]+$">
         <label for="sign-up-email">Email</label>
         <input type="email" id="sign-up-email" name="sign-up-email" placeholder="janedoe@example.com" required>
         <label for="sign-up-password">Password</label>
-        <input type="password" id="sign-up-password" name="sign-up-password" required>
+        <input type="password" id="sign-up-password" name="sign-up-password" required pattern="^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).{9,})\S$">
+        <p id="password-requirements">10 or more characters, at least 1 lowercase letter, 1 uppercase letter, 1 number</p>
         <input type="submit" id="sign-up-button" value="Sign Up">
     </form>
 </template>

@@ -189,8 +189,46 @@ if (Meteor.isClient) {
     Meteor.subscribe("ignoredFriendRequests");
     Meteor.subscribe("outgoingFriendRequests");
 
-    // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
+    // All the javascript for the sign-up form
     Template.signup.events({
+        // These functions let the browser notify the user when their input doesn't match the requirements.
+        // https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Forms/Data_form_validation#Customized_error_messages
+        'keyup #sign-up-first-name': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                // console.log(e.target.value + " is not a valid name.")
+                e.target.setCustomValidity("Allowed: Letters, numbers, spaces, and dashes.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'keyup #sign-up-last-name': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                e.target.setCustomValidity("Allowed: Letters, numbers, spaces, and dashes.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'keyup #sign-up-email': function(e, t){
+            if (e.target.validity.typeMismatch) {
+                e.target.setCustomValidity("Please enter a valid email address.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'focus #sign-up-password': function(e, t){
+            document.getElementById("password-requirements").style.display = "block";
+        },
+        // 'blur #sign-up-password': function(e, t){
+        //     document.getElementById("password-requirements").style.display = "none";
+        // },
+        'keyup #sign-up-password': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                e.target.setCustomValidity("Must be at least 10 characters long. At least 1 lowercase, 1 uppercase, 1 number.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
         'submit #sign-up': function(e, t) {
             e.preventDefault();
             // retrieve the input field values
@@ -200,29 +238,53 @@ if (Meteor.isClient) {
             var password = t.find('#sign-up-password').value;
 
             // Trim and validate your fields here.... 
+            // Remove any whitespace in email
+            email = email.replace(/^\s*|\s*$/g, "");
+            
+            // Validate input again after submission
+            var isValid = function(input){
+                if (input == firstname) {
+                    regEx = /^[a-zA-z0-9 -]+$/;
 
-            Accounts.createUser({
-                email: email,
-                password: password,
-                profile: {
-                    firstname: firstname,
-                    lastname: lastname,
-                    friends: [
+                } else if (input == lastname) {
+                    regEx = /^[a-zA-z0-9 -]+$/;
 
-                    ]
-                }
-            }, function(err) {
-                if (err) {
-                    // User account creation failed
+                } else if (input == email) {
+                    regEx = /^(([a-zA-Z]|[0-9])|([-]|[_]|[.]))+[@](([a-zA-Z0-9])|([-])){2,63}[.](([a-zA-Z0-9]){2,63})+$/gi;
+
+                } else if (input == password) {
+                    regEx = /^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).{9,})\S$/;
                 } else {
-                    // The user account has created and logged in.
-                    alert("Account created succesfully!");
-                    // Clear Form
-                    for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
-                        document.querySelectorAll("#sign-up input")[i].value = "";
-                    };
+                    return false;
                 }
-            });
+                return regEx.test(input);
+            }
+            // Only create account if every test passes
+            if (isValid(firstname) && isValid(lastname) && isValid(email) && isValid(password)) {
+                Accounts.createUser({
+                    email: email,
+                    password: password,
+                    profile: {
+                        firstname: firstname,
+                        lastname: lastname,
+                    }
+                }, function(err) {
+                    if (err) {
+                        // User account creation failed
+                    } else {
+                        // The user account has created and logged in.
+                        alert("Account created succesfully!");
+                        // Clear Form
+                        for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
+                            document.querySelectorAll("#sign-up input")[i].value = "";
+                        };
+                    }
+                });
+            } else {
+                // If they managed to get around the HTML pattern validation, the javascript will let them know they did something wrong.
+                alert("Invalid sign-up input. Check the form requirements");
+            };
+            
             return false;
         }
     });
