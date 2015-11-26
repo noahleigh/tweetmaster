@@ -19,6 +19,12 @@ Router.route('/', {
         } else {
             this.render('welcome');
         }
+    },
+    subscriptions: function(){
+        return [Meteor.subscribe("friends"), 
+                Meteor.subscribe("friendRequests"), 
+                Meteor.subscribe("ignoredFriendRequests"), 
+                Meteor.subscribe("outgoingFriendRequests")]
     }
 });
 
@@ -35,6 +41,9 @@ Router.route('/user/:_id', {
         } else {
             this.render('welcome');
         }
+    },
+    waitOn: function(){
+        return Meteor.subscribe("tweets")
     }
 });
 
@@ -106,8 +115,6 @@ if (Meteor.isServer) {
 
             //only allow the limit and skip options
             options = _.pick(options, "limit", "skip", "sort");
-
-
 
             Meteor.publishWithRelations({
                 handle: this,
@@ -194,6 +201,36 @@ if (Meteor.isServer) {
 
         });
     });
+
+    Meteor.methods({
+        // This is currently unused until we can get client-server data passing to work as intended.
+        'sanitizeTweets': function(input){
+            // From: http://stackoverflow.com/questions/295566/sanitize-rewrite-html-on-the-client-side
+            var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+            var tagOrComment = new RegExp(
+                '<(?:'
+                // Comment body.
+                + '!--(?:(?:-*[^->])*--+|-?)'
+                // Special "raw text" elements whose content should be elided.
+                + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+                + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+                // Regular name
+                + '|/?[a-z]'
+                + tagBody
+                + ')>',
+                'gi');
+            //return function(input) {
+              var oldHtml;
+              do {
+                oldHtml = input;
+                input = input.replace(tagOrComment, '');
+                //console.log("Iterated Input: "+input)
+              } while (input !== oldHtml);
+              return input.replace(/</g, '&lt;');
+            //}
+        }
+    });
 }
 
 
@@ -204,11 +241,6 @@ if (Meteor.isClient) {
 
     // Allow the client to get the user's name from their id (TBD)
     Meteor.subscribe("users");
-
-    Meteor.subscribe("friends");
-    Meteor.subscribe("friendRequests");
-    Meteor.subscribe("ignoredFriendRequests");
-    Meteor.subscribe("outgoingFriendRequests");
 
     // All the javascript for the sign-up form
     Template.signup.events({
@@ -329,7 +361,7 @@ if (Meteor.isClient) {
                     document.getElementById("login-password").value = "";
                 } else {
                     // The user has been logged in.
-                    console.log("User "+Meteor.userId()+ "logged in.");
+                    // console.log("User "+Meteor.userId()+ "logged in.");
                 }
             });
             return false;
@@ -346,7 +378,7 @@ if (Meteor.isClient) {
                     alert("You have not been logged out.");
                 } else {
                     // Tell the user we logged them out
-                    console.log("User "+userid+" has been logged out.");
+                    // console.log("User "+userid+" has been logged out.");
                 }
             });
             return false;
@@ -387,24 +419,36 @@ if (Meteor.isClient) {
 
     //Handles posting tweets
     Template.tweetentry.events({
+        'keyup #tweet-entry-text': function(event){
+            // Check if the content is entirely blank (spaces)
+            var blankTweetPattern = /^$|^\s*$/m;
+            if (blankTweetPattern.test(event.target.value)) {
+                event.target.validity.valid = false;
+                event.target.setCustomValidity("No blank tweets allowed ¯\\\_(ツ)_/¯");
+            } else {
+                event.target.validity.valid = true;
+                event.target.setCustomValidity("");
+            };
+        },
         'submit #tweet-entry': function(event) {
             // Don't refresh automatically on submit
             event.preventDefault();
 
             var text = event.target[0].value;
             var authorID = Meteor.userId();
+            // console.log(event.target[0])
 
             // Validate and tweak tweet contents...
             // In this case, don't let them post if there is no content in the tweet.
             if (text == "") {
-                alert("You must have something to post...");
+                //alert("You must have something to post...");
                 // Refocus the entry box to make it easy to type.
                 document.getElementById("tweet-entry-text").focus();
             } else{
               // Debug output
-              console.log("Form submitted");
-              console.log("authorID: " + authorID);
-              console.log("Tweet text: " + text);
+              // console.log("Form submitted");
+              // console.log("authorID: " + authorID);
+              // console.log("Tweet text: " + text);
 
               // Insert the tweet and metadata into the database collection
               Tweets.insert({
@@ -415,7 +459,7 @@ if (Meteor.isClient) {
                   if (err) {
                       alert("Your tweet did not get saved");
                   } else {  
-                      console.log("Insert succesful.");
+                      // console.log("Insert succesful.");
                       // Empty the Tweet Entry form after submission
                       document.getElementById("tweet-entry-text").value = "";
                   };
@@ -429,17 +473,19 @@ if (Meteor.isClient) {
         tweets: function() {
             if (Router.current().route.getName() == 'home') {
                 // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
-                var friendArray = Meteor.user().friendsAsUsers().fetch();
-                for (var i = friendArray.length - 1; i >= 0; i--) {
-                    friendArray[i] = friendArray[i]._id;
+                if (Meteor.user()) {
+                    var friendArray = Meteor.user().friendsAsUsers().fetch();
+                    for (var i = friendArray.length - 1; i >= 0; i--) {
+                        friendArray[i] = friendArray[i]._id;
+                    };
+                    friendArray.push(Meteor.userId());
+                    return Tweets.find({authorID: {$in: friendArray} }, {sort: {createdAt: -1 }})
                 };
-                friendArray.push(Meteor.userId());
-                return Tweets.find({authorID: {$in: friendArray} }, {sort: {createdAt: -1 }})
             } else if (Router.current().route.getName() == 'userpage') {
                 // For when tweetfeed is used in a userpage context
                 return Tweets.find({authorID: Router.current().params._id}, {sort: {createdAt: -1 }})
             } else if (Router.current().route.getName() == 'alltweets') {
-                console.log("Tweetfeed Template hit 'alltweets'");
+                // console.log("Tweetfeed Template hit 'alltweets'");
                 // For when we want to see ALL the tweets
                 return Tweets.find({}, {sort: {createdAt: -1 }});
             };    
@@ -467,7 +513,7 @@ if (Meteor.isClient) {
             function isFriend(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i]._id == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -478,7 +524,7 @@ if (Meteor.isClient) {
             function hasRequested(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i].userId == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -506,7 +552,7 @@ if (Meteor.isClient) {
             function isFriend(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i]._id == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -517,7 +563,7 @@ if (Meteor.isClient) {
             function hasRequested(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i].userId == id) {
-                        console.log("We found "+ id);
+                       // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -541,19 +587,19 @@ if (Meteor.isClient) {
     Template.userprofileinfo.events({
         'submit #relationship': function (event) {
             event.preventDefault();
-            console.log(event);
+            // console.log(event);
 
             if (event.target[0].value == "true") {
                 // Remove friend relationship
-                console.log("Remove");
+                // console.log("Remove");
                 Meteor.users.findOne({_id: Router.current().params._id}).unfriend();
             } else if (event.target[0].value == "false"){
                 // Add friend relationship
-                console.log("Add as friend");
+                // console.log("Add as friend");
                 Meteor.users.findOne({_id: Router.current().params._id}).requestFriendship();
             } else if (event.target[0].value == "pending"){
                 // Cancel Friend Request
-                console.log("Cancel Friend Request");
+                // console.log("Cancel Friend Request");
                 Meteor.users.findOne({_id: Router.current().params._id}).cancelFriendshipRequest();
             };
         }
@@ -581,6 +627,17 @@ if (Meteor.isClient) {
             return Tweets.findOne({_id: this._id}).text;
         }
     });
+
+    // Template.tweet.created = function (input) {
+    //     this.tweetText = new ReactiveVar(input);
+    //     Meteor.call('sanitizeTweets', this.tweetText.get(), function(error, result){
+    //         if (error) {
+    //             console.log(error.reason);
+    //             return;
+    //         };
+    //         this.text.set(result);
+    //     });
+    // };
 
     // Gets the actual names of the users requesting friendship
     Template.friendrequestlist.helpers({
