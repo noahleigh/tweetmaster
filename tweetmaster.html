@@ -77,7 +77,12 @@
 <!-- Our own logout button -->
 <template name="logout">
 	<form id="logout" action="post">
-        <label for="logout-button">Logged in as <span class="monospace">{{email}}</span></label>
+        <label for="logout-button">
+            Logged in as <span class="monospace">{{email}} </span>
+            {{#unless currentUser.emails.[0].verified}}
+                <span id="sendVerificationEmail">(<a href="#">Resend email verification link</a>)</span>
+            {{/unless}}
+        </label>
   		<input id="logout-button" type="submit" value="Logout">
   	</form>
 </template>

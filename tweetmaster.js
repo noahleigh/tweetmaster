@@ -85,6 +85,9 @@ Router.route('/tweet/:_id', {
 if (Meteor.isServer) {
     Meteor.startup(function() {
         // code to run on server at startup
+
+        // Set Mailgun URL
+        process.env.MAIL_URL = 'smtp://postmaster@sandbox68087e2802094f588f33fa2cfa861693.mailgun.org:6f311dbe9c1535a2b15dbb29eb85cd40@smtp.mailgun.org:587';
         // Make tweets available to the client
         Meteor.publish("tweets", function() {
             return Tweets.find({});
@@ -229,6 +232,16 @@ if (Meteor.isServer) {
               } while (input !== oldHtml);
               return input.replace(/</g, '&lt;');
             //}
+        },
+        'sendVerificationEmail':function(userID){
+            // Set up email template
+            user = Meteor.user();
+            Accounts.emailTemplates.siteName = "Tweetmaster";
+            // Accounts.emailTemplates.from = "Tweetmaster <fake@example.com>" ;
+            Accounts.emailTemplates.verifyEmail.subject = function(user){
+                return "Welcome to Tweetmaster "+user.profile.firstname + " " + user.profile.lastname;
+            }
+            return Accounts.sendVerificationEmail(userID);
         }
     });
 }
@@ -326,11 +339,18 @@ if (Meteor.isClient) {
                         // User account creation failed
                     } else {
                         // The user account has created and logged in.
-                        alert("Account created succesfully!");
-                        // Clear Form
-                        for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
-                            document.querySelectorAll("#sign-up input")[i].value = "";
-                        };
+                        Meteor.call('sendVerificationEmail', Meteor.userId(), function (error, result) {
+                            if (error) {
+                                console.log(error.reason);
+                                return;
+                            };
+                            alert("Account created succesfully! \nVerification email sent!");
+                            // Clear Form
+                            for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
+                                document.querySelectorAll("#sign-up input")[i].value = "";
+                            };
+                        });
+                        
                     }
                 });
             } else {
@@ -368,7 +388,7 @@ if (Meteor.isClient) {
         }
     });
 
-    // Handles our logout
+    // Handles our logout template
     Template.logout.events({
         'submit #logout': function() {
             var userid = Meteor.userId();
@@ -382,6 +402,16 @@ if (Meteor.isClient) {
                 }
             });
             return false;
+        },
+        'click #sendVerificationEmail': function(){
+            Meteor.call('sendVerificationEmail', Meteor.userId(), function (error, result) {
+                if (error) {
+                    console.log(error.reason);
+                    return;
+                };
+                document.getElementById("sendVerificationEmail").value = "(Verification email sent)";
+                console.log("Verification email sent");
+            });
         }
     });
 
