@@ -120,8 +120,14 @@
     </div>
     
     <div id="tweet-compose-feed">
-        {{> tweetentry}}
-        {{> tweetfeed}} 
+        {{#if currentUser.emails.[0].verified}}
+            {{> tweetentry}}
+            {{> tweetfeed}} 
+        {{else}}
+            <p>Please click on the link in the email we sent you.</p>
+            <p>After verifiying your email that way, you'll be able to join the Tweetmaster party!</p>
+            {{> tweetfeed}} 
+        {{/if}}
     </div>
 </template>
 
