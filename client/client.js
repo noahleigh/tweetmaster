@@ -1,196 +1,147 @@
-// Define the collection for holding all tweets if it doesn't exist yet.
-Tweets = new Mongo.Collection('tweets');
-
-// ROUTING
-
-// The Main template will be used for all pages, with content inserted in it.
-Router.configure({
-    layoutTemplate: 'main'
-});
-
-// Moved this logic out of the templating engine, which should be much neater with less redraws.
-// If no one is logged in, show the welcome screen. Otherwise show the user their homescreen.
-Router.route('/', {
-    name: 'home',
-    template: 'home',
-    onBeforeAction: function(){
-        if (Meteor.userId()) {
-            this.next();
-        } else {
-            this.render('welcome');
-        }
-    }
-});
-
-// Visiting /user/[userid] will show you their tweets.
-Router.route('/user/:_id', {
-    name: 'userpage',
-    template: 'userpage',
-    data: function(){
-        return Tweets.find({authorID: this.params._id}, {sort: {createdAt: -1}});
-    }
-});
-
-// Visiting /tweet/[tweetid] will show you their tweets.
-Router.route('/tweet/:_id', {
-    name: 'tweet',
-    template: 'tweet',
-    data: function(){
-        var object = {_id: this.params._id}
-        return object;
-    }
-});
-
-// Visiting /alltweets will display all the tweets in the database. For testing.
-Router.route('/alltweets', {
-    name: 'alltweets',
-    template: 'tweetfeed',
-    onAfterAction: function (){
-        console.log("looking at ALL the tweets");
-    }
-});
-
-// END ROUTING
-
-if (Meteor.isServer) {
-    Meteor.startup(function() {
-        // code to run on server at startup
-        // Make tweets available to the client
-        Meteor.publish("tweets", function() {
-            return Tweets.find({});
-        });
-        // Make users available to client (may not be necessary)
-        Meteor.publish("users", function() {
-            return Meteor.users.find({}, {
-              _id: 1,
-              profile: 1
-            });
-        });
-
-        // http://joshowens.me/the-curious-case-of-the-unknowing-leaky-meteor-security/
-        Meteor.users.deny({  
-          update: function() {
-            return true;
-          }
-        });
-
-        // From the socialize:friendships package (https://github.com/copleykj/socialize-friendships/wiki/Publications)
-        //Publish friend records with their related user records
-        Meteor.publish("friends", function (options) {
-            if(!this.userId){
-                return this.ready();
-            }
-
-            options = options || {};
-
-            //only allow the limit and skip options
-            options = _.pick(options, "limit", "skip", "sort");
-
-
-
-            Meteor.publishWithRelations({
-                handle: this,
-                collection: Meteor.friends,
-                filter: {userId:this.userId, friendId:{$ne:this.userId}},
-                options:options,
-                mappings: [{
-                    key: 'friendId',
-                    collection: Meteor.users,
-                    options:{fields:{username:true, avatarId:true, status:true}}
-                }]
-            });
-        });
-
-        Meteor.publish('friendRequests', function(options){
-            if(!this.userId){
-                return this.ready();
-            }
-
-            options = options || {};
-
-            //only allow the limit and skip options
-            options = _.pick(options, "limit", "skip", "sort");
-
-            Meteor.publishWithRelations({
-                handle: this,
-                collection: Meteor.requests,
-                filter: {userId:this.userId, denied:{$exists:false}, ignored:{$exists:false}},
-                options:options,
-                mappings: [{
-                    key: 'requesterId',
-                    collection: Meteor.users,
-                    options:{fields:{username:true, avatarId:true}}
-                }]
-            });
-
-        });
-
-        Meteor.publish('ignoredFriendRequests', function(options){
-            if(!this.userId){
-                return this.ready();
-            }
-
-            options = options || {};
-
-            //only allow the limit and skip options
-            options = _.pick(options, "limit", "skip", "sort");
-
-            Meteor.publishWithRelations({
-                handle: this,
-                collection: Meteor.requests,
-                filter: {userId:this.userId, denied:{$exists:false}, ignored:{$exists:true}},
-                options:options,
-                mappings: [{
-                    key: 'requesterId',
-                    collection: Meteor.users,
-                    options:{fields:{username:true, avatarId:true}}
-                }]
-            });
-
-        });
-
-        Meteor.publish('outgoingFriendRequests', function(options){
-            if(!this.userId){
-                return this.ready();
-            }
-
-            options = options || {};
-
-            //only allow the limit and skip options
-            options = _.pick(options, "limit", "skip", "sort");
-
-            Meteor.publishWithRelations({
-                handle: this,
-                collection: Meteor.requests,
-                filter: {requesterId:this.userId, denied:{$exists:false}},
-                options:options,
-                mappings: [{
-                    key: 'requesterId',
-                    collection: Meteor.users,
-                    options:{fields:{username:true, avatarId:true}}
-                }]
-            });
-
-        });
-    });
-}
-
-
 if (Meteor.isClient) {
 
     // Look at the published collection of tweets, update if there are changes
     Meteor.subscribe("tweets");
 
+
     // Allow the client to get the user's name from their id (TBD)
     Meteor.subscribe("users");
 
-    Meteor.subscribe("friends");
-    Meteor.subscribe("friendRequests");
-    Meteor.subscribe("ignoredFriendRequests");
+    // Subscribe to everything?
+    // Look at the published collection of tweets, update if there are changes
+    Meteor.subscribe("tweets");
+    // Allow the client to get the user's name from their id (TBD)
+    Meteor.subscribe("users");
+    Meteor.subscribe("friends"); 
+    Meteor.subscribe("friendRequests"); 
+    Meteor.subscribe("ignoredFriendRequests"); 
     Meteor.subscribe("outgoingFriendRequests");
 
-    // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
+    // ROUTING
+
+    // The Main template will be used for all pages, with content inserted in it.
+    Router.configure({
+        layoutTemplate: 'main'
+    });
+
+    // Moved this logic out of the templating engine, which should be much neater with less redraws.
+    // If no one is logged in, show the welcome screen. Otherwise show the user their homescreen.
+    Router.route('/', {
+        name: 'home',
+        template: 'home',
+        onBeforeAction: function(){
+            if (Meteor.userId()) {
+                this.next();
+            } else {
+                this.render('welcome');
+            }
+        },
+        subscriptions: function(){
+            return [// Look at the published collection of tweets, update if there are changes
+                    Meteor.subscribe("tweets"),
+                    // Allow the client to get the user's name from their id (TBD)
+                    Meteor.subscribe("users"),
+                    Meteor.subscribe("friends"), 
+                    Meteor.subscribe("friendRequests"), 
+                    Meteor.subscribe("ignoredFriendRequests"), 
+                    Meteor.subscribe("outgoingFriendRequests")]
+        }
+    });
+
+    // Visiting /user/[userid] will show you their tweets.
+    Router.route('/user/:_id', {
+        name: 'userpage',
+        template: 'userpage',
+        data: function(){
+            return Tweets.find({authorID: this.params._id}, {sort: {createdAt: -1}});
+        },
+        onBeforeAction: function(){
+            if (Meteor.userId()) {
+                this.next();
+            } else {
+                this.render('welcome');
+            }
+        },
+        waitOn: function(){
+            return Meteor.subscribe("tweets")
+        }
+    });
+
+    // Visiting /tweet/[tweetid] will show you their tweets.
+    Router.route('/tweet/:_id', {
+        name: 'tweet',
+        template: 'tweet',
+        data: function(){
+            var object = {_id: this.params._id}
+            return object;
+        },
+        onBeforeAction: function(){
+            if (Meteor.userId()) {
+                this.next();
+            } else {
+                this.render('welcome');
+            }
+        }
+    });
+
+    // Visiting /alltweets will display all the tweets in the database. For testing.
+    // Router.route('/alltweets', {
+    //     name: 'alltweets',
+    //     template: 'tweetfeed',
+    //     onAfterAction: function (){
+    //         console.log("looking at ALL the tweets");
+    //     },
+    //     onBeforeAction: function(){
+    //         if (Meteor.userId()) {
+    //             this.next();
+    //         } else {
+    //             this.render('welcome');
+    //         }
+    //     }
+    // });
+
+    // END ROUTING
+
+    // All the javascript for the sign-up form
     Template.signup.events({
+        // These functions let the browser notify the user when their input doesn't match the requirements.
+        // https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Forms/Data_form_validation#Customized_error_messages
+        'keyup #sign-up-first-name': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                // console.log(e.target.value + " is not a valid name.")
+                e.target.setCustomValidity("Allowed: Letters, numbers, spaces, and dashes.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'keyup #sign-up-last-name': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                e.target.setCustomValidity("Allowed: Letters, numbers, spaces, and dashes.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'keyup #sign-up-email': function(e, t){
+            if (e.target.validity.typeMismatch) {
+                e.target.setCustomValidity("Please enter a valid email address.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        'focus #sign-up-password': function(e, t){
+            document.getElementById("password-requirements").style.display = "block";
+        },
+        // 'blur #sign-up-password': function(e, t){
+        //     document.getElementById("password-requirements").style.display = "none";
+        // },
+        'keyup #sign-up-password': function(e, t){
+            if (e.target.validity.patternMismatch) {
+                e.target.setCustomValidity("Must be at least 10 characters long. At least 1 lowercase, 1 uppercase, 1 number.");
+            } else {
+                e.target.setCustomValidity("");
+            };
+        },
+        // Code adapted from http://blog.benmcmahen.com/post/41741539120/building-a-customized-accounts-ui-for-meteor
         'submit #sign-up': function(e, t) {
             e.preventDefault();
             // retrieve the input field values
@@ -200,29 +151,60 @@ if (Meteor.isClient) {
             var password = t.find('#sign-up-password').value;
 
             // Trim and validate your fields here.... 
+            // Remove any whitespace in email
+            email = email.replace(/^\s*|\s*$/g, "");
+            
+            // Validate input again after submission
+            var isValid = function(input){
+                if (input == firstname) {
+                    regEx = /^[a-zA-z0-9 -]+$/;
 
-            Accounts.createUser({
-                email: email,
-                password: password,
-                profile: {
-                    firstname: firstname,
-                    lastname: lastname,
-                    friends: [
+                } else if (input == lastname) {
+                    regEx = /^[a-zA-z0-9 -]+$/;
 
-                    ]
-                }
-            }, function(err) {
-                if (err) {
-                    // User account creation failed
+                } else if (input == email) {
+                    regEx = /^(([a-zA-Z]|[0-9])|([-]|[_]|[.]))+[@](([a-zA-Z0-9])|([-])){2,63}[.](([a-zA-Z0-9]){2,63})+$/gi;
+
+                } else if (input == password) {
+                    regEx = /^((?=\S*?[A-Z])(?=\S*?[a-z])(?=\S*?[0-9]).{9,})\S$/;
                 } else {
-                    // The user account has created and logged in.
-                    alert("Account created succesfully!");
-                    // Clear Form
-                    for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
-                        document.querySelectorAll("#sign-up input")[i].value = "";
-                    };
+                    return false;
                 }
-            });
+                return regEx.test(input);
+            }
+            // Only create account if every test passes
+            if (isValid(firstname) && isValid(lastname) && isValid(email) && isValid(password)) {
+                Accounts.createUser({
+                    email: email,
+                    password: password,
+                    profile: {
+                        firstname: firstname,
+                        lastname: lastname,
+                    }
+                }, function(err) {
+                    if (err) {
+                        // User account creation failed
+                    } else {
+                        // The user account has created and logged in.
+                        Meteor.call('sendVerificationEmail', Meteor.userId(), function (error, result) {
+                            if (error) {
+                                console.log(error.reason);
+                                return;
+                            };
+                            alert("Account created succesfully! \nVerification email sent!");
+                            // Clear Form
+                            for (var i = document.querySelectorAll("#sign-up input").length - 1; i >= 0; i--) {
+                                document.querySelectorAll("#sign-up input")[i].value = "";
+                            };
+                        });
+                        
+                    }
+                });
+            } else {
+                // If they managed to get around the HTML pattern validation, the javascript will let them know they did something wrong.
+                alert("Invalid sign-up input. Check the form requirements");
+            };
+            
             return false;
         }
     });
@@ -246,14 +228,14 @@ if (Meteor.isClient) {
                     document.getElementById("login-password").value = "";
                 } else {
                     // The user has been logged in.
-                    console.log("User "+Meteor.userId()+ "logged in.");
+                    // console.log("User "+Meteor.userId()+ "logged in.");
                 }
             });
             return false;
         }
     });
 
-    // Handles our logout
+    // Handles our logout template
     Template.logout.events({
         'submit #logout': function() {
             var userid = Meteor.userId();
@@ -263,10 +245,20 @@ if (Meteor.isClient) {
                     alert("You have not been logged out.");
                 } else {
                     // Tell the user we logged them out
-                    console.log("User "+userid+" has been logged out.");
+                    // console.log("User "+userid+" has been logged out.");
                 }
             });
             return false;
+        },
+        'click #sendVerificationEmail': function(){
+            Meteor.call('sendVerificationEmail', Meteor.userId(), function (error, result) {
+                if (error) {
+                    console.log(error.reason);
+                    return;
+                };
+                document.getElementById("sendVerificationEmail").value = "(Verification email sent)";
+                console.log("Verification email sent");
+            });
         }
     });
 
@@ -304,24 +296,36 @@ if (Meteor.isClient) {
 
     //Handles posting tweets
     Template.tweetentry.events({
+        'keyup #tweet-entry-text': function(event){
+            // Check if the content is entirely blank (spaces)
+            var blankTweetPattern = /^$|^\s*$/m;
+            if (blankTweetPattern.test(event.target.value)) {
+                event.target.validity.valid = false;
+                event.target.setCustomValidity("No blank tweets allowed ¯\\\_(ツ)_/¯");
+            } else {
+                event.target.validity.valid = true;
+                event.target.setCustomValidity("");
+            };
+        },
         'submit #tweet-entry': function(event) {
             // Don't refresh automatically on submit
             event.preventDefault();
 
             var text = event.target[0].value;
             var authorID = Meteor.userId();
+            // console.log(event.target[0])
 
             // Validate and tweak tweet contents...
             // In this case, don't let them post if there is no content in the tweet.
             if (text == "") {
-                alert("You must have something to post...");
+                //alert("You must have something to post...");
                 // Refocus the entry box to make it easy to type.
                 document.getElementById("tweet-entry-text").focus();
             } else{
               // Debug output
-              console.log("Form submitted");
-              console.log("authorID: " + authorID);
-              console.log("Tweet text: " + text);
+              // console.log("Form submitted");
+              // console.log("authorID: " + authorID);
+              // console.log("Tweet text: " + text);
 
               // Insert the tweet and metadata into the database collection
               Tweets.insert({
@@ -332,7 +336,7 @@ if (Meteor.isClient) {
                   if (err) {
                       alert("Your tweet did not get saved");
                   } else {  
-                      console.log("Insert succesful.");
+                      // console.log("Insert succesful.");
                       // Empty the Tweet Entry form after submission
                       document.getElementById("tweet-entry-text").value = "";
                   };
@@ -346,17 +350,19 @@ if (Meteor.isClient) {
         tweets: function() {
             if (Router.current().route.getName() == 'home') {
                 // Gets a pointer to the Tweets collection, filtered by current user, sorted newest-first.
-                var friendArray = Meteor.user().friendsAsUsers().fetch();
-                for (var i = friendArray.length - 1; i >= 0; i--) {
-                    friendArray[i] = friendArray[i]._id;
+                if (Meteor.user()) {
+                    var friendArray = Meteor.user().friendsAsUsers().fetch();
+                    for (var i = friendArray.length - 1; i >= 0; i--) {
+                        friendArray[i] = friendArray[i]._id;
+                    };
+                    friendArray.push(Meteor.userId());
+                    return Tweets.find({authorID: {$in: friendArray} }, {sort: {createdAt: -1 }})
                 };
-                friendArray.push(Meteor.userId());
-                return Tweets.find({authorID: {$in: friendArray} }, {sort: {createdAt: -1 }})
             } else if (Router.current().route.getName() == 'userpage') {
                 // For when tweetfeed is used in a userpage context
                 return Tweets.find({authorID: Router.current().params._id}, {sort: {createdAt: -1 }})
             } else if (Router.current().route.getName() == 'alltweets') {
-                console.log("Tweetfeed Template hit 'alltweets'");
+                // console.log("Tweetfeed Template hit 'alltweets'");
                 // For when we want to see ALL the tweets
                 return Tweets.find({}, {sort: {createdAt: -1 }});
             };    
@@ -384,7 +390,7 @@ if (Meteor.isClient) {
             function isFriend(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i]._id == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -395,7 +401,7 @@ if (Meteor.isClient) {
             function hasRequested(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i].userId == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -423,7 +429,7 @@ if (Meteor.isClient) {
             function isFriend(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i]._id == id) {
-                        console.log("We found "+ id);
+                        // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -434,7 +440,7 @@ if (Meteor.isClient) {
             function hasRequested(array, id){
                 for (var i = array.length - 1; i >= 0; i--) {
                     if (array[i].userId == id) {
-                        console.log("We found "+ id);
+                       // console.log("We found "+ id);
                         return true;
                     };
                 };
@@ -458,19 +464,19 @@ if (Meteor.isClient) {
     Template.userprofileinfo.events({
         'submit #relationship': function (event) {
             event.preventDefault();
-            console.log(event);
+            // console.log(event);
 
             if (event.target[0].value == "true") {
                 // Remove friend relationship
-                console.log("Remove");
+                // console.log("Remove");
                 Meteor.users.findOne({_id: Router.current().params._id}).unfriend();
             } else if (event.target[0].value == "false"){
                 // Add friend relationship
-                console.log("Add as friend");
+                // console.log("Add as friend");
                 Meteor.users.findOne({_id: Router.current().params._id}).requestFriendship();
             } else if (event.target[0].value == "pending"){
                 // Cancel Friend Request
-                console.log("Cancel Friend Request");
+                // console.log("Cancel Friend Request");
                 Meteor.users.findOne({_id: Router.current().params._id}).cancelFriendshipRequest();
             };
         }
@@ -498,6 +504,17 @@ if (Meteor.isClient) {
             return Tweets.findOne({_id: this._id}).text;
         }
     });
+
+    // Template.tweet.created = function (input) {
+    //     this.tweetText = new ReactiveVar(input);
+    //     Meteor.call('sanitizeTweets', this.tweetText.get(), function(error, result){
+    //         if (error) {
+    //             console.log(error.reason);
+    //             return;
+    //         };
+    //         this.text.set(result);
+    //     });
+    // };
 
     // Gets the actual names of the users requesting friendship
     Template.friendrequestlist.helpers({

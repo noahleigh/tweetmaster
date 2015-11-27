@@ -79,6 +79,14 @@ text-align: center;
     display: block;
 }
 
+#password-requirements {
+	font-style: italic;
+	width: 200px;
+	margin: 0px;
+	display: none;
+	font-size: 12px;
+}
+
 .monospace {
     font-family: monospace;
 }
