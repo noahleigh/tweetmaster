@@ -4,3 +4,6 @@
 1. Install [Meteor](https://www.meteor.com/install)
 2. Clone repo
 3. Run `meteor` in the repo folder.
+
+## Live EC2 Instance:
+http://tweetmaster.csci450test.com/
